@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netflix Clone FINALE PRO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#111;color:#fff;overflow-x:hidden;transition:background 1s ease;}
+header{position:fixed;top:0;left:0;width:100%;background:#141414;padding:1rem 2rem;z-index:100;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;}
+header h1{font-size:2rem;color:#e50914;}
+nav a{color:#fff;text-decoration:none;margin-left:1rem;font-weight:bold;transition:color 0.3s;}
+nav a:hover{color:#e50914;}
+#search-bar{margin-left:1rem;padding:0.3rem 0.5rem;border-radius:5px;border:none;}
+main{padding-top:6rem;}
+section{margin:2rem 0;}
+h2{margin-left:1rem;margin-bottom:0.5rem;font-size:1.7rem;}
+.row{display:flex;overflow-x:auto;gap:1rem;padding:0 1rem;scroll-behavior:smooth;}
+.row::-webkit-scrollbar{height:10px;}
+.row::-webkit-scrollbar-thumb{background:#444;border-radius:5px;}
+.row::-webkit-scrollbar-track{background:#222;}
+.movie{position:relative;min-width:250px;height:160px;flex-shrink:0;border-radius:10px;overflow:hidden;cursor:pointer;transition:transform 0.4s;}
+.movie img,.movie video{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;transition:transform 0.4s ease;}
+.movie:hover{transform:scale(1.35);z-index:3;}
+.overlay{position:absolute;bottom:-100%;width:100%;height:100%;background:linear-gradient(to top,rgba(0,0,0,0.95),rgba(0,0,0,0));display:flex;flex-direction:column;justify-content:flex-end;align-items:center;transition:all 0.5s ease;}
+.movie:hover .overlay{bottom:0;opacity:1;}
+.movie-title{color:#fff;font-size:1rem;font-weight:bold;margin-bottom:0.2rem;text-align:center;}
+.movie-info{color:#ccc;font-size:0.75rem;margin-bottom:0.2rem;text-align:center;}
+.movie-desc{color:#ddd;font-size:0.7rem;margin-bottom:0.3rem;text-align:center;max-height:80px;overflow:hidden;}
+.movie-buttons{display:flex;gap:0.5rem;margin-bottom:0.5rem;}
+.play-btn,.list-btn,.share-btn{background:#e50914;border:none;padding:0.3rem 0.8rem;border-radius:5px;color:#fff;font-weight:bold;cursor:pointer;transition:all 0.3s;}
+.play-btn:hover,.list-btn:hover,.share-btn:hover{background:#f40612;box-shadow:0 0 10px #f40612;transform:scale(1.1);}
+#modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);justify-content:center;align-items:center;z-index:200;transition:opacity 0.5s;}
+#modal video{width:80%;max-width:900px;border-radius:10px;}
+#close{position:absolute;top:2rem;right:2rem;font-size:2.5rem;cursor:pointer;color:#fff;}
+@media(max-width:600px){.movie{min-width:150px;height:100px;}}
+</style>
+</head>
+<body>
+<header>
+<h1>NETFLIX</h1>
+<div>
+<input type="text" id="search-bar" placeholder="Rechercher un film...">
+<nav>
+<a href="#animation">Animation</a>
+<a href="#action">Action</a>
+<a href="#comedy">Comédie</a>
+</nav>
+</div>
+</header>
+
+<main>
+<section id="animation">
+<h2>Animation</h2>
+<div class="row" id="animation-row"></div>
+</section>
+<section id="action">
+<h2>Action</h2>
+<div class="row" id="action-row"></div>
+</section>
+<section id="comedy">
+<h2>Comédie</h2>
+<div class="row" id="comedy-row"></div>
+</section>
+</main>
+
+<div id="modal">
+<span id="close">&times;</span>
+<video controls id="modal-video"></video>
+</div>
+
+<script>
+// Films gratuits pour test
+const moviesData={
+animation:[
+{title:"Big Buck Bunny",year:"2008",rating:"★★★★☆",duration:"10 min",genre:"Animation",desc:"Un lapin géant fait face à des rongeurs turbulents dans ce film plein d'humour et d'action.",src:"https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4",preview:"https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/480/Big_Buck_Bunny_480_5s_1MB.mp4",img:"https://peach.blender.org/wp-content/uploads/title_anouncement.jpg?x11217",bg:"https://peach.blender.org/wp-content/uploads/title_anouncement.jpg?x11217"},
+{title:"Sintel",year:"2010",rating:"★★★★☆",duration:"15 min",genre:"Animation",desc:"Une jeune fille courageuse poursuit un dragon blessé, aventure et émotion garanties.",src:"https://archive.org/download/Sintel_720p/Sintel_720p.mp4",preview:"https://archive.org/download/Sintel_480p/Sintel_480p.mp4",img:"https://upload.wikimedia.org/wikipedia/commons/7/7a/Sintel_poster.jpg",bg:"https://upload.wikimedia.org/wikipedia/commons/7/7a/Sintel_poster.jpg"}
+],
+action:[
+{title:"Tears of Steel",year:"2012",rating:"★★★☆☆",duration:"12 min",genre:"Action",desc:"Des cyborgs et des humains s'affrontent dans un futur proche.",src:"https://mango.blender.org/wp-content/content/download/videos/720p/mp4/tears_of_steel_720p_10s.mp4",preview:"https://mango.blender.org/wp-content/content/download/videos/480p/mp4/tears_of_steel_480p_10s.mp4",img:"https://mango.blender.org/wp-content/content/download/videos/720p/mp4/tears_of_steel_720p_still.jpg",bg:"https://mango.blender.org/wp-content/content/download/videos/720p/mp4/tears_of_steel_720p_still.jpg"}
+],
+comedy:[
+{title:"Sample Comedy",year:"2022",rating:"★★★☆☆",duration:"8 min",genre:"Comédie",desc:"Une courte comédie amusante qui fera rire tout le monde.",src:"https://test-videos.co.uk/vids/forbiggerfun/mp4/h264/720/ForBiggerFun_720_10s_1MB.mp4",preview:"https://test-videos.co.uk/vids/forbiggerfun/mp4/h264/480/ForBiggerFun_480_5s_1MB.mp4",img:"https://dummyimage.com/250x140/555/fff&text=Comedy+Sample",bg:"https://dummyimage.com/800x450/555/fff&text=Comedy+Sample"}
+]
+};
+
+function loadMovies(genre,rowId){
+  const row=document.getElementById(rowId);
+  moviesData[genre].forEach(movie=>{
+    const div=document.createElement('div');
+    div.className='movie';
+    div.setAttribute('data-src',movie.src);
+    div.setAttribute('data-bg',movie.bg);
+    div.setAttribute('data-title',movie.title.toLowerCase());
+    div.innerHTML=`<img src="${movie.img}" alt="${movie.title}">
+    <video src="${movie.preview}" muted loop></video>
+    <div class="overlay">
+      <div class="movie-title">${movie.title}</div>
+      <div class="movie-info">${movie.year} | ${movie.rating} | ${movie.duration} | ${movie.genre}</div>
+      <div class="movie-desc">${movie.desc}</div>
+      <div class="movie-buttons">
+        <button class="play-btn">Play</button>
+        <button class="list-btn">+ Ma Liste</button>
+        <button class="share-btn">Partager</button>
+      </div>
+    </div>`;
+    row.appendChild(div);
+
+    const video=div.querySelector('video');
+    const playBtn=div.querySelector('.play-btn');
+
+    // Hover preview + audio fade-in/out
+    div.addEventListener('mouseenter',()=>{
+      video.style.display='block';
+      video.volume=0;
+      video.play();
+      let vol=0;
+      const fadeIn=setInterval(()=>{
+        vol+=0.05; if(vol>=0.3){vol=0.3; clearInterval(fadeIn);}
+        video.volume=vol;
+      },50);
+      document.body.style.background=`url(${movie.bg}) center/cover no-repeat`;
+      document.body.style.transition='background 1s ease';
+    });
+    div.addEventListener('mouseleave',()=>{
+      const fadeOut=setInterval(()=>{
+        video.volume-=0.05; if(video.volume<=0){video.volume=0; clearInterval(fadeOut);}
+      },50);
+      setTimeout(()=>{video.pause(); video.style.display='none';},300);
+      document.body.style.background="#111";
+    });
+
+    // Play full video modal
+    playBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      modal.style.display='flex';
+      modalVideo.src=movie.src;
+      modalVideo.play();
+    });
+  });
+}
+
+loadMovies('animation','animation-row');
+loadMovies('action','action-row');
+loadMovies('comedy','comedy-row');
+
+// Scroll infini
+document.querySelectorAll('.row').forEach(row=>{
+  row.addEventListener('scroll', ()=>{
+    if(row.scrollLeft + row.clientWidth >= row.scrollWidth - 10){
+      const genre=row.id.split('-')[0];
+      loadMovies(genre,row.id);
+    }
+  });
+});
+
+const modal=document.getElementById('modal');
+const modalVideo=document.getElementById('modal-video');
+const close=document.getElementById('close');
+close.addEventListener('click',()=>{ modalVideo.pause(); modal.style.display='none'; });
+modal.addEventListener('click',(e)=>{ if(e.target===modal){ modalVideo.pause(); modal.style.display='none'; }});
+
+// Recherche live
+document.getElementById('search-bar').addEventListener('input', e=>{
+  const term=e.target.value.toLowerCase();
+  document.querySelectorAll('.movie').forEach(m=>{
+    m.style.display=m.getAttribute('data-title').includes(term)?'block':'none';
+  });
+});
+</script>
+</body>
+</html>
